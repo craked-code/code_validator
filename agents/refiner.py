@@ -1,5 +1,6 @@
 import subprocess
 import json
+from agents.generator import strip_markdown
 
 class Refiner:
     def __init__(self, model_path):
@@ -10,9 +11,11 @@ class Refiner:
         cmd = ["ollama", "run", self.model_path, prompt]
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, encoding="utf-8")
-            return result.stdout.strip() #without json.load cause we want raw code unlike structured data for tests
+            return strip_markdown(result.stdout.strip()) #without json.load cause we want raw code unlike structured data for tests
         except subprocess.TimeoutExpired:
             print("Refiner: LLM timeout after 60s")
             return code
         except Exception as e:
-            print(f"Refiner: Unexpted error: {e}")
+            print(f"Refiner: Unexpected error: {e}")
+
+        return code #refiner returns original code unchanged instead of None
