@@ -14,21 +14,21 @@ def main(initial_code, model_path, max_iterations=10):
     current_code = initial_code
     all_tests = [] #to collect every test generated across all iterations
     iteration = 0
-    consecutive_generator_faliures = 0
-    consecutive_adversary_faliures = 0
+    consecutive_generator_failures = 0
+    consecutive_adversary_failures = 0
 
     while iteration < max_iterations:
         print(f"\n-- Iteration {iteration + 1} --")
         tests = generator.generate(current_code)
         if not tests:
-            consecutive_generator_faliures += 1 
-            if consecutive_generator_faliures >=3:
+            consecutive_generator_failures += 1 
+            if consecutive_generator_failures >=3:
                 print("Generator failed 3 times in a row. Aborting.")
                 break
             iteration += 1
             continue
         else: 
-            consecutive_generator_faliures = 0
+            consecutive_generator_failures = 0
         
         print(f"Generator produced {len(tests)} test(s)")
         all_tests.extend(tests) #we use extend instead of append because test is already a list
@@ -38,26 +38,33 @@ def main(initial_code, model_path, max_iterations=10):
         "does the current code pass every test we have ever seen?"
         '''
 
-        adverserial_tests = adversary.attack(current_code, tests)
-        if adverserial_tests is None:
-            consecutive_adversary_faliures += 1
-            if consecutive_adversary_faliures >= 3:
+        adversarial_tests = adversary.attack(current_code, tests)
+        if adversarial_tests is None:
+            consecutive_adversary_failures += 1
+            if consecutive_adversary_failures >= 3:
                 print("Adversary failed 3 times in a row. Aborting.")
                 break
             print("Adversay failed to generate a test. Skipping iteration.")
             iteration += 1
             continue
         else:
-            consecutive_adversary_faliures = 0
+            consecutive_adversary_failures = 0
+            consecutive_passes = 0 
 
-        passed = execute_test(current_code, adverserial_tests)
+        passed = execute_test(current_code, adversarial_tests)
         print(f"Adversarial test {'PASSED' if passed else 'FAILED'}")
-        all_tests.append(adverserial_tests) #storing adverserial tests irrespective of passed or failed
+        all_tests.append(adversarial_tests) #storing adversarial tests irrespective of passed or failed
 
         if passed:
-            break
-        current_code = refiner.refine(current_code, adverserial_tests)
-        print("Refiner updated the code")
+            consecutive_passes += 1
+            print(f"Adversarial test PASSED. Consecutive passes: {consecutive_passes}")
+            if consecutive_passes >= 2:
+                break
+        else:
+            consecutive_passes = 0
+            current_code = refiner.refine(current_code, adversarial_tests)
+            print("Refiner updated the code")
+
         iteration += 1
 
     if iteration >= max_iterations:

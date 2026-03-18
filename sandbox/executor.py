@@ -5,7 +5,9 @@ from io import StringIO #creates an in-memory text stream to capture print state
 
 def execute_test(code, test_case):
     try:
-        namespace = {} # to store code's variables and functions
+        namespace = {"builtins":{}} # to store code's variables and functions; builtin prevents the executed code from accessing any built in python functions
+        safe_builtins = ["print", "len", "range", "int", "float", "str", "bool", "list", "dict", "tuple", "set", "abs", "max", "min", "sum", "round", "sorted", "enumerate", "zip", "map", "filter", "isinstance", "type", "ValueError", "TypeError", "Exception"]
+        namespace["__builtins__"] = {name: __builtins__[name] if isinstance(__builtins__, dict) else getattr(__builtins__, name) for name in safe_builtins if (name in __builtins__ if isinstance(__builtins__, dict) else hasattr(__builtins__, name))}
         exec(code, namespace)
         '''
         --> runs the code string as python code
